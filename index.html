@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexedDB Example</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 2em;
+        }
+
+        h1 {
+            font-style: italic;
+            color: mediumslateblue;
+        }
+    </style>
+    <script type="module">
+        import { openDB } from 'https://unpkg.com/idb?module'
+
+        (async () => {
+            if (!('indexedDB' in window)) {
+                console.warn('IndexedDB not supported')
+                return
+            }
+
+            const name = 'dogs'
+            const version = 3
+            const storeName = 'details'
+
+            const db = await openDB(name, version, {
+                upgrade(db, oldVersion, newVersion, transaction) {
+                    db.createObjectStore(storeName)
+                }
+            })
+
+            await db.put(storeName, {name: 'Roger', age: 7, weight: '24kg'}, 'Roger')
+            await db.put(storeName, {name: 'Syd', age: 5, weight: '21kg'}, 'Syd')
+        })()
+    </script>
+</head>
+<body>
+    <h1>IndexedDB Exmaple</h1>
+    <p>Check the IndexedDB panel in browser devtools!</p>
+</body>
+</html>
