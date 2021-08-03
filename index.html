@@ -19,29 +19,92 @@
     <script type="module">
         import { openDB } from 'https://unpkg.com/idb?module'
 
-        (async () => {
-            if (!('indexedDB' in window)) {
-                console.warn('IndexedDB not supported')
-                return
-            }
+        const name = 'dogs'
+        const version = 3
+        const storeName = 'details'
 
-            const name = 'dogs'
-            const version = 3
-            const storeName = 'details'
-
-            const db = await openDB(name, version, {
+        const getDb = async () => {
+            return await openDB(name, version, {
                 upgrade(db, oldVersion, newVersion, transaction) {
                     db.createObjectStore(storeName)
                 }
             })
+        }
 
+        const refreshTableFromDb = async (db) => {
+            const data = await db.transaction(storeName).objectStore(storeName).getAll()
+            document.querySelector('tbody').innerHTML = ''
+            for (const item of data) {
+                const tr = document.createElement('tr')
+                let td = document.createElement('td')
+                td.innerHTML = item.name
+                tr.appendChild(td)
+                
+                td = document.createElement('td')
+                td.innerHTML = item.age
+                tr.appendChild(td)
+
+                td = document.createElement('td')
+                td.innerHTML = item.weight
+                tr.appendChild(td)
+
+                td = document.createElement('td')
+                const button = document.createElement('button')
+                const attribute = document.createAttribute('id')
+                attribute.value = `remove-${item.name}`
+                button.setAttributeNode(attribute)
+                button.innerHTML = 'Delete'
+                td.appendChild(button)
+                tr.appendChild(td)
+
+                document.querySelector('tbody').appendChild(tr)
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const db = await getDb()
+            refreshTableFromDb(db)
+        })
+
+        document.querySelector('#add-roger').addEventListener('click', async () => {
+            const db = await getDb()
             await db.put(storeName, {name: 'Roger', age: 7, weight: '24kg'}, 'Roger')
+            refreshTableFromDb(db)
+        })
+
+        document.querySelector('#add-syd').addEventListener('click', async () => {
+            const db = await getDb()
             await db.put(storeName, {name: 'Syd', age: 5, weight: '21kg'}, 'Syd')
-        })()
+            refreshTableFromDb(db)
+        })
+
+        document.addEventListener('click', async (event) => {
+            if (['remove-Syd', 'remove-Roger'].includes(event.target.id)) {
+                const db = await getDb()
+                const tx = await db.transaction(storeName, 'readwrite')
+                const store = await tx.objectStore(storeName)
+                const key = event.target.id.split('-')[1]
+                await store.delete(key)
+                await tx.done
+                refreshTableFromDb(db)
+            }
+        })
+
     </script>
 </head>
 <body>
-    <h1>IndexedDB Exmaple</h1>
-    <p>Check the IndexedDB panel in browser devtools!</p>
+    <h1>Dogs</h1>
+    <button id="add-roger">Add Roger</button>
+    <button id="add-syd">Add Syd</button>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Weight</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 </body>
 </html>
